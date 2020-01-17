@@ -1,5 +1,4 @@
 import threading
-from time import sleep
 
 import pandas as pd
 import requests
@@ -28,7 +27,7 @@ class Patients:
     def transfer_for_dropdown(self) -> list:
         return [{'label': patient.name, 'value': patient.id} for patient in self.patients]
 
-    def get_patient_by_id(self, id: str):
+    def get_patient_by_id(self, id):
         patient = list(filter(lambda patient: patient.id == id, self.patients))
         try:
             return patient[0]
@@ -123,3 +122,4 @@ if __name__ == '__main__':
     print(patients)
     values_df = patients.patients[0]
     print(values_df.transfer_for_datatable())
+    print(list(values_df.sensor_values.loc[values_df.sensor_values.index[-1], :]))

@@ -2,8 +2,10 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
+import plotly.graph_objects as go
 
 from resources import values
+from app.data import Patient
 
 
 def row_col_wrapper(component):
@@ -13,7 +15,7 @@ def row_col_wrapper(component):
 def card(value, title):
     return dbc.Card([
         dbc.CardHeader(title + ':'),
-        dbc.CardBody(html.H4(value, className="card-title"))
+        dbc.CardBody(html.H6(value, className="card-title"))
     ])
 
 
@@ -43,11 +45,21 @@ def datatable():
         id='datatable',
         columns=[{'name': column, 'id': column} for column in
                  ['sensor', 'value_left', 'value_right']],
-        data=[]
+        data=[],
+        style_cell={'height': '10vh'},
     )
 
 
-plot = None
+def plot(patient: Patient):
+    fig = go.Figure()
+
+    columns = list(patient.sensor_values.columns)
+    columns.remove('timestamp')
+    for column in columns:
+        fig.add_trace(go.Scatter(x=patient.sensor_values['timestamp'], y=patient.sensor_values[column], name=column,
+                                 line=dict(color='firebrick')))
+    fig.update_layout(xaxis_title='Czas', yaxis_title='Nacisk')
+    return fig
 
 
 def layout(patients_list: list):
@@ -55,9 +67,9 @@ def layout(patients_list: list):
         dcc.Interval(id='interval', interval=values.data_update_interval_seconds * 1000),
         dbc.Container([
             dbc.Row([
-                dbc.Col(patient_overview(patients_list), width=3),
-                dbc.Col(datatable(), width=3),
-                dbc.Col(plot, width=6),
+                dbc.Col(patient_overview(patients_list), width=2),
+                dbc.Col(datatable(), width=2),
+                dbc.Col(dcc.Graph(id='plot'), width=8),
             ])
         ],
             fluid=True,

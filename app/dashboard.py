@@ -20,7 +20,8 @@ class AppWrapper:
         @self.app.callback(
             [
                 Output('patient_info', 'children'),
-                Output('datatable', 'data')
+                Output('datatable', 'data'),
+                Output('plot', 'figure')
             ],
             [
                 Input('dropdown', 'value'),
@@ -29,7 +30,9 @@ class AppWrapper:
         def switch_patient(value, _):
             patient = patients.get_patient_by_id(value)
             if patient:
-                return layout.patient_info(patient), patient.transfer_for_datatable()
+                return (layout.patient_info(patient),
+                        patient.transfer_for_datatable(),
+                        layout.plot(patient))
             return [], None
 
 
