@@ -13,27 +13,24 @@ class AppWrapper:
         self.configure_app()
 
     def configure_app(self):
-        self.app.layout = layout.layout(patients.patients)
+        self.app.layout = layout.layout(patients.transfer_for_dropdown())
         self.add_callbacks()
 
     def add_callbacks(self):
-        @self.app.callback([
-            Output('name', 'children'),
-            Output('birthday', 'children'),
-            Output('disabled', 'children'),
-            Output('case', 'children')
-        ], [
-            Input('dropdown', 'value'),
-            Input('interval', 'n_intervals')
-        ])
+        @self.app.callback(
+            [
+                Output('patient_info', 'children'),
+                Output('datatable', 'data')
+            ],
+            [
+                Input('dropdown', 'value'),
+                Input('interval', 'n_intervals')
+            ])
         def switch_patient(value, _):
-            patient = list(filter(lambda x: x.id == value, patients.patients))[0]
-            return (
-                patient.name,
-                patient.birthday,
-                values.disabled_classification[patient.disabled],
-                patient.case
-            )
+            patient = patients.get_patient_by_id(value)
+            if patient:
+                return layout.patient_info(patient), patient.transfer_for_datatable()
+            return [], None
 
 
 if __name__ == '__main__':
