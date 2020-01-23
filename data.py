@@ -1,27 +1,28 @@
 import threading
 import time
-
 import pandas as pd
 import requests
 import json
 from datetime import datetime, timedelta
 from requests import HTTPError
 
-from resources import values
-
 START_TIME = time.time()
+PATIENTS_IDS = ['1', '2', '3', '4', '5', '6']
+BASE_URL = 'http://tesla.iem.pw.edu.pl:9080/v2/monitor/'
+MAX_BUFFER_MINUTES = 10
+UPDATE_INTERVAL_SECONDS = 1
 
 
 class Patients:
     def __init__(self):
-        self.patients = [Patient(id) for id in values.patients_ids]
+        self.patients = [Patient(id) for id in PATIENTS_IDS]
         self.update_periodically()
 
     def update_periodically(self):
         print('updating data ' + datetime.utcnow().isoformat())
         self.update()
         threading.Timer(
-            values.data_update_interval_seconds - ((time.time() - START_TIME) % values.data_update_interval_seconds),
+            UPDATE_INTERVAL_SECONDS - ((time.time() - START_TIME) % UPDATE_INTERVAL_SECONDS),
             self.update_periodically).start()
 
     def update(self):
@@ -83,13 +84,13 @@ class Patient:
             'sensor': sensor,
             'value_left': self.sensor_values.loc[self.sensor_values.index[-1], left_foot_column_name],
             'value_right': self.sensor_values.loc[self.sensor_values.index[-1], right_foot_column_name],
-            'anomaly_left': self.sensor_anomalies.loc[self.sensor_anomalies.index[-1], left_foot_column_name],
-            'anomaly_right': self.sensor_anomalies.loc[self.sensor_anomalies.index[-1], right_foot_column_name]
+            'anomaly_left': str(self.sensor_anomalies.loc[self.sensor_anomalies.index[-1], left_foot_column_name]),
+            'anomaly_right': str(self.sensor_anomalies.loc[self.sensor_anomalies.index[-1], right_foot_column_name])
         }
 
     def _fetch(self) -> dict:
         try:
-            data = requests.get(f'{values.base_url}{self.id}')
+            data = requests.get(f'{BASE_URL}{self.id}')
             return json.loads(data.content)
         except HTTPError:
             return {}
@@ -112,18 +113,5 @@ class Patient:
         series = pd.Series(row, index=data_frame.columns)
         data_frame = data_frame.append(series, ignore_index=True)
         data_frame = data_frame[
-            data_frame['timestamp'] > timestamp - timedelta(hours=0, minutes=values.buffer_time_minutes)]
+            data_frame['timestamp'] > timestamp - timedelta(hours=0, minutes=MAX_BUFFER_MINUTES)]
         return data_frame
-
-    def __str__(self):
-        return f'{self.id, self.name, self.birthday, self.disabled, self.case}\n{self.sensor_values}\n{self.sensor_anomalies}'
-
-
-if __name__ == '__main__':
-    patients = Patients()
-    patients.update()
-    patients.update()
-    print(patients)
-    values_df = patients.patients[0]
-    print(values_df.transfer_for_datatable())
-    print(list(values_df.sensor_values.loc[values_df.sensor_values.index[-1], :]))

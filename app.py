@@ -1,15 +1,19 @@
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 import dash
 
-from app.data import Patients
-from resources import values, layout
+from data import Patients
+from layout import layout, plot_layout, info_layout
+
+EXTERNAL = [dbc.themes.BOOTSTRAP, 'https://codepen.io/chriddyp/pen/bWLwgP.css',
+            'https://fonts.googleapis.com/css?family=Roboto&display=swap']
 
 patients = Patients()
 
 
 class AppWrapper:
     def __init__(self):
-        self.app = dash.Dash(__name__, external_stylesheets=values.external_stylesheets)
+        self.app = dash.Dash(__name__, external_stylesheets=EXTERNAL)
         self.configure_app()
 
     def configure_app(self):
@@ -30,9 +34,9 @@ class AppWrapper:
         def switch_patient(value, _):
             patient = patients.get_patient_by_id(value)
             if patient:
-                return (layout.patient_info(patient),
+                return (info_layout.patient_info(patient),
                         patient.transfer_for_datatable(),
-                        layout.plot(patient))
+                        plot_layout.plot(patient))
             return [], None
 
 

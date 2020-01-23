@@ -1,4 +1,6 @@
+dash
 pandas
 requests
 plotly
 colour
+dash_bootstrap_components
