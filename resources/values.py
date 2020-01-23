@@ -1,4 +1,5 @@
 import dash_bootstrap_components as dbc
+from colour import Color
 
 
 external_stylesheets = [dbc.themes.BOOTSTRAP, 'https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -26,7 +27,10 @@ sensor_parameters = {
     0: {'place': 'front', 'side': 'left', 'sign': 'L1'},
     1: {'place': 'middle', 'side': 'left', 'sign': 'L2'},
     2: {'place': 'back', 'side': 'left', 'sign': 'L3'},
-    4: {'place': 'front', 'side': 'right', 'sign': 'R1'},
-    5: {'place': 'middle', 'side': 'right', 'sign': 'R2'},
-    6: {'place': 'back', 'side': 'right', 'sign': 'R3'},
+    3: {'place': 'front', 'side': 'right', 'sign': 'R1'},
+    4: {'place': 'middle', 'side': 'right', 'sign': 'R2'},
+    5: {'place': 'back', 'side': 'right', 'sign': 'R3'},
 }
+
+anomaly_color = Color("red")
+no_anomaly_color = Color("green")

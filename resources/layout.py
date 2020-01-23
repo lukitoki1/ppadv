@@ -1,3 +1,4 @@
+import colour
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
@@ -10,6 +11,13 @@ from app.data import Patient
 
 def row_col_wrapper(component):
     return dbc.Row(dbc.Col(component))
+
+
+def rescale_color(color_object: colour.Color, pressure: int):
+    pressure = 1000 if pressure > 1000 else pressure
+    pressure = 0 if pressure < 0 else pressure
+    color_object.saturation = pressure / 1000
+    return color_object.hex_l
 
 
 def card(value, title):
@@ -56,9 +64,11 @@ def plot(patient: Patient):
     columns = list(patient.sensor_values.columns)
     columns.remove('timestamp')
     for column in columns:
-        fig.add_trace(go.Scatter(x=patient.sensor_values['timestamp'], y=patient.sensor_values[column], name=column,
-                                 line=dict(color='firebrick')))
-    fig.update_layout(xaxis_title='Czas', yaxis_title='Nacisk')
+        sensor_parameters = values.sensor_parameters[column]
+        fig.add_trace(go.Scatter(x=patient.sensor_values['timestamp'], y=patient.sensor_values[column],
+                                 name='{} {}'.format(sensor_parameters['side'].capitalize(),
+                                                     sensor_parameters['place'].capitalize())))
+    fig.update_layout(xaxis_title='Time', yaxis_title='Pressure')
     return fig
 
 

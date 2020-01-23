@@ -1,13 +1,15 @@
 import threading
+import time
 
 import pandas as pd
 import requests
 import json
 from datetime import datetime, timedelta
-
 from requests import HTTPError
 
 from resources import values
+
+START_TIME = time.time()
 
 
 class Patients:
@@ -16,9 +18,11 @@ class Patients:
         self.update_periodically()
 
     def update_periodically(self):
-        print('aktualizacja')
+        print('updating data ' + datetime.utcnow().isoformat())
         self.update()
-        threading.Timer(values.data_update_interval_seconds, self.update_periodically).start()
+        threading.Timer(
+            values.data_update_interval_seconds - ((time.time() - START_TIME) % values.data_update_interval_seconds),
+            self.update_periodically).start()
 
     def update(self):
         for patient in self.patients:
@@ -70,9 +74,9 @@ class Patient:
         self.sensor_anomalies = self._update_data_frame(timestamp, anomalies_data, self.sensor_anomalies)
 
     def transfer_for_datatable(self) -> list:
-        return [self.__transfer_for_datatable_util_fun('Góra', 0, 3),
-                self.__transfer_for_datatable_util_fun('Środek', 1, 4),
-                self.__transfer_for_datatable_util_fun('Dół', 2, 5)]
+        return [self.__transfer_for_datatable_util_fun('Front', 0, 3),
+                self.__transfer_for_datatable_util_fun('Middle', 1, 4),
+                self.__transfer_for_datatable_util_fun('Back', 2, 5)]
 
     def __transfer_for_datatable_util_fun(self, sensor, left_foot_column_name, right_foot_column_name):
         return {
