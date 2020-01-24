@@ -23,7 +23,8 @@ class Patients:
         self.update()
         threading.Timer(
             UPDATE_INTERVAL_SECONDS - ((time.time() - START_TIME) % UPDATE_INTERVAL_SECONDS),
-            self.update_periodically).start()
+            self.update_periodically
+        ).start()
 
     def update(self):
         for patient in self.patients:
@@ -74,12 +75,17 @@ class Patient:
         self.sensor_values = self._update_data_frame(timestamp, values_data, self.sensor_values)
         self.sensor_anomalies = self._update_data_frame(timestamp, anomalies_data, self.sensor_anomalies)
 
-    def transfer_for_datatable(self) -> list:
-        return [self.__transfer_for_datatable_util_fun('Front', 0, 3),
-                self.__transfer_for_datatable_util_fun('Middle', 1, 4),
-                self.__transfer_for_datatable_util_fun('Back', 2, 5)]
+    def map_for_plot(self, minutes=MAX_BUFFER_MINUTES):
+        if minutes == MAX_BUFFER_MINUTES:
+            return self.sensor_values
+        return self.sensor_values[self.sensor_values['timestamp'] > datetime.utcnow() - timedelta(hours=0, minutes=minutes)]
 
-    def __transfer_for_datatable_util_fun(self, sensor, left_foot_column_name, right_foot_column_name):
+    def map_for_datatable(self) -> list:
+        return [self.__map_for_datatable_util_fun('Front', 0, 3),
+                self.__map_for_datatable_util_fun('Middle', 1, 4),
+                self.__map_for_datatable_util_fun('Back', 2, 5)]
+
+    def __map_for_datatable_util_fun(self, sensor, left_foot_column_name, right_foot_column_name):
         return {
             'sensor': sensor,
             'value_left': self.sensor_values.loc[self.sensor_values.index[-1], left_foot_column_name],

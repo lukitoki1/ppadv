@@ -11,6 +11,13 @@ EXTERNAL = [dbc.themes.BOOTSTRAP, 'https://codepen.io/chriddyp/pen/bWLwgP.css',
 patients = Patients()
 
 
+def button_pressed(n_clicks):
+    if n_clicks is None or n_clicks % 2 == 0:
+        return False
+    return True
+
+
+
 class AppWrapper:
     def __init__(self):
         self.app = dash.Dash(__name__, external_stylesheets=EXTERNAL)
@@ -24,8 +31,7 @@ class AppWrapper:
         @self.app.callback(
             [
                 Output('patient_info', 'children'),
-                Output('datatable', 'data'),
-                Output('plot', 'figure')
+                Output('datatable', 'data')
             ],
             [
                 Input('dropdown', 'value'),
@@ -35,9 +41,28 @@ class AppWrapper:
             patient = patients.get_patient_by_id(value)
             if patient:
                 return (info_layout.patient_info(patient),
-                        patient.transfer_for_datatable(),
-                        plot_layout.plot(patient))
+                        patient.map_for_datatable())
             return [], None
+
+        @self.app.callback(
+            Output('interval', 'disabled'),
+            [Input('pause_button', 'n_clicks')]
+        )
+        def pause_resume(n_clicks):
+            return button_pressed(n_clicks)
+
+        @self.app.callback(
+            Output('plot', 'figure'),
+            [
+                Input('dropdown', 'value'),
+                Input('interval', 'n_intervals'),
+                Input('time_window_buttons', 'value'),
+            ])
+        def display_plot(value, _, time_window):
+            patient = patients.get_patient_by_id(value)
+            if not patient:
+                return None
+            return plot_layout.plot(patient.map_for_plot(time_window))
 
 
 if __name__ == '__main__':

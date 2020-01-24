@@ -30,14 +30,16 @@ def patient_info(patient):
     ]
 
 
-def patient_overview(patients_list: list):
+def patient_overview_layout(patients_list: list):
     return [
-        row_col_wrapper(dcc.Dropdown(
-            id='dropdown',
-            options=patients_list,
-            value=patients_list[0]['value'],
-            clearable=False,
-            style={'marginBottom': '2vh'}
-        )),
+        row_col_wrapper(html.H3('Personal Info')),
+        row_col_wrapper(
+            dcc.Dropdown(
+                id='dropdown',
+                options=patients_list,
+                value=patients_list[0]['value'],
+                clearable=False,
+                style={'marginBottom': '2vh'}
+            )),
         html.Div(id='patient_info')
     ]

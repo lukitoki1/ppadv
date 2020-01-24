@@ -3,8 +3,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 import data
-from layout.datatable_layout import datatable
-from layout.info_layout import patient_overview
+from layout.datatable_layout import datatable_layout
+from layout.info_layout import patient_overview_layout
+from layout.plot_layout import plot_layout
 
 
 def layout(patients_list: list):
@@ -12,9 +13,9 @@ def layout(patients_list: list):
         dcc.Interval(id='interval', interval=data.UPDATE_INTERVAL_SECONDS * 1000),
         dbc.Container([
             dbc.Row([
-                dbc.Col(patient_overview(patients_list), width=2),
-                dbc.Col(datatable(), width=2),
-                dbc.Col(dcc.Graph(id='plot'), width=8),
+                dbc.Col(patient_overview_layout(patients_list), width=2),
+                dbc.Col(datatable_layout(), width=2),
+                dbc.Col(plot_layout(), width=8),
             ])
         ],
             fluid=True,

@@ -18,11 +18,12 @@ The app should welcome you with a nice dashboard.
 
 ### More information
 
-Inf you want to find out more about how to use the app
+If you want to find out more about how to use the app
 and how the app was build, please refer to:
 
 * Functional Specification,
-* Implementation Specification.
+* Implementation Specification,
+* Design Decisions Document.
 
-Both documents can be found bundled with this project.
+The whole documentary has been bundled with this project.
 
