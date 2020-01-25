@@ -3,3 +3,5 @@ pandas
 requests
 plotly
 dash_bootstrap_components
+redis
+pickle

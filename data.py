@@ -5,6 +5,8 @@ import requests
 import json
 from datetime import datetime, timedelta
 from requests import HTTPError
+import redis
+import pickle
 
 START_TIME = time.time()
 PATIENTS_IDS = ['1', '2', '3', '4', '5', '6']
@@ -12,6 +14,7 @@ BASE_URL = 'http://tesla.iem.pw.edu.pl:9080/v2/monitor/'
 MAX_BUFFER_MINUTES = 10
 UPDATE_INTERVAL_SECONDS = 1
 
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 class Patients:
     def __init__(self):
@@ -19,7 +22,7 @@ class Patients:
         self.update_periodically()
 
     def update_periodically(self):
-        print('updating data ' + datetime.utcnow().isoformat())
+        # print('updating data ' + datetime.utcnow().isoformat())
         self.update()
         threading.Timer(
             UPDATE_INTERVAL_SECONDS - ((time.time() - START_TIME) % UPDATE_INTERVAL_SECONDS),
@@ -74,6 +77,7 @@ class Patient:
         anomalies_data = [sensor['anomaly'] for sensor in data]
         self.sensor_values = self._update_data_frame(timestamp, values_data, self.sensor_values)
         self.sensor_anomalies = self._update_data_frame(timestamp, anomalies_data, self.sensor_anomalies)
+        self._update_database(timestamp, values_data, anomalies_data)
 
     def map_for_plot(self, minutes=MAX_BUFFER_MINUTES):
         if minutes == MAX_BUFFER_MINUTES:
@@ -121,3 +125,22 @@ class Patient:
         data_frame = data_frame[
             data_frame['timestamp'] > timestamp - timedelta(hours=0, minutes=MAX_BUFFER_MINUTES)]
         return data_frame
+
+    def _update_database(self, timestamp, values_data, anomalies_data):
+        val_stamp, anom_stamp = [timestamp], [timestamp]
+        for value, anomaly in zip(values_data, anomalies_data):
+            val_stamp.append(value)
+            anom_stamp.append(anomaly)
+        r.lpush(f'values_{self.id}', pickle.dumps(val_stamp))
+        r.lpush(f'anomalies_{self.id}', pickle.dumps(anom_stamp))
+
+        first_values = r.rpop(f'values_{self.id}')
+        first_anomalies = r.rpop(f'anomalies_{self.id}')
+        first_timestamp = pickle.loads(first_values)[0]
+        while first_timestamp < timestamp - timedelta(hours=0, minutes=MAX_BUFFER_MINUTES):
+            first_values = r.rpop(f'values_{self.id}')
+            first_anomalies = r.rpop(f'anomalies_{self.id}')
+            first_timestamp = pickle.loads(first_values)[0]
+        r.rpush(f'values_{self.id}', first_values)
+        r.rpush(f'anomalies_{self.id}', first_anomalies)
+        # print(pickle.loads(r.lrange(f'values_{self.id}', 0, 0)[0]))

@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 import itertools
 import dash_table
 
-datatable_cell_style = {'height': '18.8vh', 'fontFamily': 'Roboto', 'textAlign': 'left', 'padding': '1vh'}
+datatable_cell_style = {'height': '18.8vh', 'width': '5vw', 'fontFamily': 'Roboto', 'textAlign': 'left', 'padding': '1vh'}
 
 
 def row_col_wrapper(component):
