@@ -16,6 +16,7 @@ UPDATE_INTERVAL_SECONDS = 1
 
 r = redis.Redis(host='localhost', port=6379, db=0)
 
+
 class Patients:
     def __init__(self):
         self.patients = [Patient(id) for id in PATIENTS_IDS]
@@ -56,8 +57,7 @@ class Patient:
         self.disabled = None
         self.case = None
 
-        self.sensor_values = None
-        self.sensor_anomalies = None
+        self.data_headers = None
 
         self.update()
 
@@ -68,34 +68,39 @@ class Patient:
 
         self._update_patient_info(data)
 
-        if self.sensor_values is None or self.sensor_anomalies is None:
+        if self.data_headers is None:
             self._init_data_frames(data)
 
         timestamp = datetime.utcnow()
         data = data['trace']['sensors']
         values_data = [sensor['value'] for sensor in data]
         anomalies_data = [sensor['anomaly'] for sensor in data]
-        self.sensor_values = self._update_data_frame(timestamp, values_data, self.sensor_values)
-        self.sensor_anomalies = self._update_data_frame(timestamp, anomalies_data, self.sensor_anomalies)
         self._update_database(timestamp, values_data, anomalies_data)
 
     def map_for_plot(self, minutes=MAX_BUFFER_MINUTES):
-        if minutes == MAX_BUFFER_MINUTES:
-            return self.sensor_values
-        return self.sensor_values[self.sensor_values['timestamp'] > datetime.utcnow() - timedelta(hours=0, minutes=minutes)]
+        data = [pickle.loads(e) for e in r.lrange(f'values_{self.id}', 0, -1)]
+        data_frame = self.data_headers
+        for row in data:
+            if row[0] < datetime.utcnow() - timedelta(hours=0, minutes=minutes):
+                break
+            series = pd.Series(row, index=self.data_headers.columns)
+            data_frame = data_frame.append(series, ignore_index=True)
+        return data_frame
 
     def map_for_datatable(self) -> list:
-        return [self.__map_for_datatable_util_fun('Front', 0, 3),
-                self.__map_for_datatable_util_fun('Middle', 1, 4),
-                self.__map_for_datatable_util_fun('Back', 2, 5)]
+        return [self.__map_for_datatable_util_fun('Front', 1, 4),
+                self.__map_for_datatable_util_fun('Middle', 2, 5),
+                self.__map_for_datatable_util_fun('Back', 3, 6)]
 
     def __map_for_datatable_util_fun(self, sensor, left_foot_column_name, right_foot_column_name):
+        value_data = pickle.loads(r.lrange(f'values_{self.id}', 0, 0)[0])
+        anomaly_data = pickle.loads(r.lrange(f'anomalies_{self.id}', 0, 0)[0])
         return {
             'sensor': sensor,
-            'value_left': self.sensor_values.loc[self.sensor_values.index[-1], left_foot_column_name],
-            'value_right': self.sensor_values.loc[self.sensor_values.index[-1], right_foot_column_name],
-            'anomaly_left': str(self.sensor_anomalies.loc[self.sensor_anomalies.index[-1], left_foot_column_name]),
-            'anomaly_right': str(self.sensor_anomalies.loc[self.sensor_anomalies.index[-1], right_foot_column_name])
+            'value_left': value_data[left_foot_column_name],
+            'value_right': value_data[right_foot_column_name],
+            'anomaly_left': str(anomaly_data[left_foot_column_name]),
+            'anomaly_right': str(anomaly_data[right_foot_column_name])
         }
 
     def _fetch(self) -> dict:
@@ -107,8 +112,7 @@ class Patient:
 
     def _init_data_frames(self, data):
         df_columns = ['timestamp'] + [sensor['id'] for sensor in data['trace']['sensors']]
-        self.sensor_values = pd.DataFrame(columns=df_columns)
-        self.sensor_anomalies = pd.DataFrame(columns=df_columns)
+        self.data_headers = pd.DataFrame(columns=df_columns)
 
     def _update_patient_info(self, data):
         self.name = f"{data['firstname']} {data['lastname']}"
@@ -143,4 +147,3 @@ class Patient:
             first_timestamp = pickle.loads(first_values)[0]
         r.rpush(f'values_{self.id}', first_values)
         r.rpush(f'anomalies_{self.id}', first_anomalies)
-        # print(pickle.loads(r.lrange(f'values_{self.id}', 0, 0)[0]))
