@@ -57,7 +57,7 @@ class Patient:
         self.disabled = None
         self.case = None
 
-        self.data_headers = None
+        self.df_columns = None
 
         self.update()
 
@@ -68,8 +68,8 @@ class Patient:
 
         self._update_patient_info(data)
 
-        if self.data_headers is None:
-            self._init_data_frames(data)
+        if self.df_columns is None:
+            self._init_df_columns(data)
 
         timestamp = datetime.utcnow()
         data = data['trace']['sensors']
@@ -78,14 +78,9 @@ class Patient:
         self._update_database(timestamp, values_data, anomalies_data)
 
     def map_for_plot(self, minutes=MAX_BUFFER_MINUTES):
-        data = [pickle.loads(e) for e in r.lrange(f'values_{self.id}', 0, -1)]
-        data_frame = self.data_headers
-        for row in data:
-            if row[0] < datetime.utcnow() - timedelta(hours=0, minutes=minutes):
-                break
-            series = pd.Series(row, index=self.data_headers.columns)
-            data_frame = data_frame.append(series, ignore_index=True)
-        return data_frame
+        n_records = int(minutes * 60 / UPDATE_INTERVAL_SECONDS) + 1
+        data = [pickle.loads(e) for e in r.lrange(f'values_{self.id}', 0, n_records)]
+        return pd.DataFrame(data, columns=self.df_columns)
 
     def map_for_datatable(self) -> list:
         return [self.__map_for_datatable_util_fun('Front', 1, 4),
@@ -110,9 +105,8 @@ class Patient:
         except HTTPError:
             return {}
 
-    def _init_data_frames(self, data):
-        df_columns = ['timestamp'] + [sensor['id'] for sensor in data['trace']['sensors']]
-        self.data_headers = pd.DataFrame(columns=df_columns)
+    def _init_df_columns(self, data):
+        self.df_columns = ['timestamp'] + [sensor['id'] for sensor in data['trace']['sensors']]
 
     def _update_patient_info(self, data):
         self.name = f"{data['firstname']} {data['lastname']}"
