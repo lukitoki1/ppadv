@@ -8,8 +8,6 @@ from layout import layout, plot_layout, info_layout
 EXTERNAL = [dbc.themes.BOOTSTRAP, 'https://codepen.io/chriddyp/pen/bWLwgP.css',
             'https://fonts.googleapis.com/css?family=Roboto&display=swap']
 
-patients = Patients()
-
 
 def button_pressed(n_clicks):
     if n_clicks is None or n_clicks % 2 == 0:
@@ -21,10 +19,11 @@ def button_pressed(n_clicks):
 class AppWrapper:
     def __init__(self):
         self.app = dash.Dash(__name__, external_stylesheets=EXTERNAL)
+        self.patients = Patients()
         self.configure_app()
 
     def configure_app(self):
-        self.app.layout = layout.layout(patients.transfer_for_dropdown())
+        self.app.layout = layout.layout(self.patients.transfer_for_dropdown())
         self.add_callbacks()
 
     def add_callbacks(self):
@@ -38,7 +37,7 @@ class AppWrapper:
                 Input('interval', 'n_intervals')
             ])
         def switch_patient(value, _):
-            patient = patients.get_patient_by_id(value)
+            patient = self.patients.get_patient_by_id(value)
             if patient:
                 return (info_layout.patient_info(patient),
                         patient.map_for_datatable())
@@ -59,10 +58,10 @@ class AppWrapper:
                 Input('time_window_buttons', 'value'),
             ])
         def display_plot(value, _, time_window):
-            patient = patients.get_patient_by_id(value)
+            patient = self.patients.get_patient_by_id(value)
             if not patient:
                 return None
-            return plot_layout.plot(patient.map_for_plot(time_window))
+            return plot_layout.plot(patient.map_for_plot(time_window), value)
 
 
 if __name__ == '__main__':

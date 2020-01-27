@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 import itertools
 import dash_table
 
-datatable_cell_style = {'height': '18.8vh', 'width': '5vw', 'fontFamily': 'Roboto', 'textAlign': 'left', 'padding': '1vh'}
+datatable_cell_style = {'height': '14vh', 'width': '5vw', 'fontFamily': 'Roboto', 'fontSize': '100%', 'textAlign': 'left', 'padding': '1vh'}
 
 
 def row_col_wrapper(component):
@@ -31,7 +31,7 @@ def datatable_conditional_styling():
                 'column_id': f'value_{column_id_side}',
                 'filter_query': '{anomaly_%s} eq %s' % (column_id_side, str(anomaly))
             },
-            'backgroundColor': '#800000' if anomaly else '#008000',
+            'backgroundColor': '#ff6666' if anomaly else '#42d756',
             'color': 'white'
         })
     return style

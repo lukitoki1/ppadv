@@ -20,17 +20,17 @@ r = redis.Redis(host='localhost', port=6379, db=0)
 class Patients:
     def __init__(self):
         self.patients = [Patient(id) for id in PATIENTS_IDS]
-        self.update_periodically()
+        self._update_periodically()
 
-    def update_periodically(self):
+    def _update_periodically(self):
         # print('updating data ' + datetime.utcnow().isoformat())
-        self.update()
+        self._update()
         threading.Timer(
             UPDATE_INTERVAL_SECONDS - ((time.time() - START_TIME) % UPDATE_INTERVAL_SECONDS),
-            self.update_periodically
+            self._update_periodically
         ).start()
 
-    def update(self):
+    def _update(self):
         for patient in self.patients:
             patient.update()
 
@@ -78,16 +78,16 @@ class Patient:
         self._update_database(timestamp, values_data, anomalies_data)
 
     def map_for_plot(self, minutes=MAX_BUFFER_MINUTES):
-        n_records = int(minutes * 60 / UPDATE_INTERVAL_SECONDS) + 1
+        n_records = int(minutes * 60 / UPDATE_INTERVAL_SECONDS)
         data = [pickle.loads(e) for e in r.lrange(f'values_{self.id}', 0, n_records)]
         return pd.DataFrame(data, columns=self.df_columns)
 
     def map_for_datatable(self) -> list:
-        return [self.__map_for_datatable_util_fun('Front', 1, 4),
-                self.__map_for_datatable_util_fun('Middle', 2, 5),
-                self.__map_for_datatable_util_fun('Back', 3, 6)]
+        return [self._map_for_datatable_util_fun('Front', 1, 4),
+                self._map_for_datatable_util_fun('Middle', 2, 5),
+                self._map_for_datatable_util_fun('Back', 3, 6)]
 
-    def __map_for_datatable_util_fun(self, sensor, left_foot_column_name, right_foot_column_name):
+    def _map_for_datatable_util_fun(self, sensor, left_foot_column_name, right_foot_column_name):
         value_data = pickle.loads(r.lrange(f'values_{self.id}', 0, 0)[0])
         anomaly_data = pickle.loads(r.lrange(f'anomalies_{self.id}', 0, 0)[0])
         return {
@@ -113,16 +113,6 @@ class Patient:
         self.birthday = data['birthdate']
         self.disabled = data['disabled']
         self.case = data['trace']['name']
-
-    def _update_data_frame(self, timestamp, data, data_frame: pd.DataFrame):
-        row = [timestamp]
-        for value in data:
-            row.append(value)
-        series = pd.Series(row, index=data_frame.columns)
-        data_frame = data_frame.append(series, ignore_index=True)
-        data_frame = data_frame[
-            data_frame['timestamp'] > timestamp - timedelta(hours=0, minutes=MAX_BUFFER_MINUTES)]
-        return data_frame
 
     def _update_database(self, timestamp, values_data, anomalies_data):
         val_stamp, anom_stamp = [timestamp], [timestamp]
