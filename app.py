@@ -11,8 +11,8 @@ EXTERNAL = [dbc.themes.BOOTSTRAP, 'https://codepen.io/chriddyp/pen/bWLwgP.css',
 
 def button_pressed(n_clicks):
     if n_clicks is None or n_clicks % 2 == 0:
-        return False
-    return True
+        return False, {'color': '#ff0000', 'margin-right': '10px'}, '||'
+    return True, {'color': '#00b359', 'margin-right': '10px'}, '>'
 
 
 
@@ -44,7 +44,11 @@ class AppWrapper:
             return [], None
 
         @self.app.callback(
-            Output('interval', 'disabled'),
+            [
+                Output('interval', 'disabled'),
+                Output('pause_button', 'style'),
+                Output('pause_button', 'children')
+            ],
             [Input('pause_button', 'n_clicks')]
         )
         def pause_resume(n_clicks):

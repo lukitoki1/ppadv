@@ -28,7 +28,7 @@ def plot_layout():
         row_col_wrapper(html.H3('Recent Readings')),
         row_col_wrapper(dcc.Graph(id='plot')),
         dbc.Row([dbc.Col(
-            html.Button('||', id='pause_button'), width=1),
+            html.Button('||', id='pause_button', style={'color': '#ff0000', 'margin-right': '10px'}), width=1),
             dbc.Col(
                 dcc.RadioItems(
                     id='time_window_buttons',
@@ -40,6 +40,7 @@ def plot_layout():
                     ],
                     value=2,
                     labelStyle={'display': 'inline-block', 'family': 'Roboto', 'size': '15', 'padding': '10px'},
+                    style={'margin-left': '20px'}
                 ))
         ], style={'marginTop': '4vh', 'marginLeft': '8vh'})
     ]
